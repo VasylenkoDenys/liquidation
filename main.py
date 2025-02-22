@@ -9,46 +9,38 @@ telegram_token = "7849765435:AAGKSvUGXFmjTkxGFIphqiGIubinOedJvJg"
 chat_id = "1466935078"
 bot = telebot.TeleBot(telegram_token)
 
-# 🔹 WebSocket URL (Bybit Public Stream)
-BYBIT_WS_URL = "wss://stream.bybit.com/v5/public/linear"
+# 🔹 Возможные WebSocket URL Bybit
+BYBIT_WS_URLS = [
+    "wss://stream.bybit.com/v5/public/linear",  # Фьючерсы
+    "wss://stream.bybit.com/v5/public/spot",    # Спот-рынок
+    "wss://stream.bybit.com/realtime_public",   # Старый URL (может работать)
+]
 
-# 🔹 Функция обработки сообщений WebSocket
 def on_message(ws, message):
-    data = json.loads(message)
-    
-    if "topic" in data and "liquidation" in data["topic"]:  # Проверяем, что это ликвидация
-        liquidation = data["data"][0]
-        symbol = liquidation["symbol"]
-        side = "🟥 Short" if liquidation["side"] == "Sell" else "🟩 Long"
-        qty = float(liquidation["execQty"])
-        price = float(liquidation["execPrice"])
-        value = qty * price
-
-        if value > 100000:  # Фильтр: Ликвидации > 100K$
-            msg = f"⚡ Крупная ликвидация {symbol}!\n💰 {side} ликвидировано на {value:.2f} USDT\n📉 Цена: {price:.2f}"
-            bot.send_message(chat_id, msg)
-            print(msg)
+    print(f"Получены данные: {message}")
 
 def on_error(ws, error):
     print(f"Ошибка WebSocket: {error}")
 
 def on_close(ws, close_status_code, close_msg):
-    print("Соединение закрыто")
+    print(f"WebSocket закрыт: {close_status_code}, {close_msg}")
 
 def on_open(ws):
-    print("🔗 WebSocket подключён! Ожидаем ликвидации...")
+    print("✅ Успешное подключение!")
     subscribe_msg = {
         "op": "subscribe",
         "args": ["liquidation.BTCUSDT", "liquidation.ETHUSDT", "liquidation.SOLUSDT"]
     }
     ws.send(json.dumps(subscribe_msg))
 
-# Подключаемся к WebSocket Bybit
-ws = websocket.WebSocketApp(
-    BYBIT_WS_URL,  
-    on_message=on_message,
-    on_error=on_error,
-    on_close=on_close
-)
-ws.on_open = on_open
-ws.run_forever()
+# 🔹 Перебираем доступные WebSocket-серверы
+for url in BYBIT_WS_URLS:
+    print(f"🔄 Пробуем подключиться к {url}...")
+    ws = websocket.WebSocketApp(
+        url,
+        on_message=on_message,
+        on_error=on_error,
+        on_close=on_close
+    )
+    ws.on_open = on_open
+    ws.run_forever()
