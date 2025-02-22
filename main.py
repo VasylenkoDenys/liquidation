@@ -1,8 +1,6 @@
 import json
 import websocket
 import telebot
-import time
-time.sleep(2)
 
 # 🔹 API-ключи
 telegram_token = "7849765435:AAGKSvUGXFmjTkxGFIphqiGIubinOedJvJg"
@@ -16,20 +14,29 @@ BYBIT_WS_URL = "wss://stream.bybit.com/v5/public/linear"
 def on_message(ws, message):
     data = json.loads(message)
 
-    if "topic" in data and "liquidation" in data["topic"]:  # Проверяем, что это ликвидация
-        liquidation = data["data"]
-        
-        for event in liquidation:  # Может быть несколько ликвидаций в одном сообщении
-            symbol = event["symbol"]
-            side = "🟥 Short" if event["side"] == "Sell" else "🟩 Long"
-            size = float(event["size"])
-            price = float(event["price"])
-            value = size * price  # Общая сумма ликвидации в USDT
+    # Проверяем, что данные правильной структуры
+    if "topic" in data and "liquidation" in data["topic"]:
+        print(f"Получены данные: {data}")  # Для отладки
 
-            if value > 100000:  # Фильтр по ликвидациям > $100K
-                msg = f"⚡ Крупная ликвидация {symbol}!\n💰 {side} ликвидировано на {value:.2f} USDT\n📉 Цена: {price:.2f}"
-                bot.send_message(chat_id, msg)
-                print(msg)  # Лог в консоль
+        # Убедимся, что data['data'] - это список, а не строка
+        liquidation_data = data.get("data", [])
+
+        if isinstance(liquidation_data, list):
+            for event in liquidation_data:  # Перебор ликвидаций
+                symbol = event["symbol"]
+                side = "🟥 Short" if event["side"] == "Sell" else "🟩 Long"
+                size = float(event["size"])
+                price = float(event["price"])
+                value = size * price  # Общая сумма ликвидации в USDT
+
+                if value > 100000:  # Фильтр по ликвидациям > $100K
+                    msg = f"⚡ Крупная ликвидация {symbol}!\n💰 {side} ликвидировано на {value:.2f} USDT\n📉 Цена: {price:.2f}"
+                    bot.send_message(chat_id, msg)
+                    print(msg)  # Лог в консоль
+        else:
+            print(f"Не удалось распарсить данные: {liquidation_data}")
+    else:
+        print(f"Полученные данные не соответствуют ожидаемой структуре: {data}")
 
 def on_error(ws, error):
     print(f"Ошибка WebSocket: {error}")
