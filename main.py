@@ -18,21 +18,20 @@ def on_message(ws, message):
     if "topic" in data and "liquidation" in data["topic"]:
         print(f"Получены данные: {data}")  # Для отладки
 
-        # Убедимся, что data['data'] - это список, а не строка
-        liquidation_data = data.get("data", [])
+        # Теперь "data['data']" - это словарь, а не список
+        liquidation_data = data.get("data", {})
 
-        if isinstance(liquidation_data, list):
-            for event in liquidation_data:  # Перебор ликвидаций
-                symbol = event["symbol"]
-                side = "🟥 Short" if event["side"] == "Sell" else "🟩 Long"
-                size = float(event["size"])
-                price = float(event["price"])
-                value = size * price  # Общая сумма ликвидации в USDT
+        if isinstance(liquidation_data, dict):  # Проверка, что это словарь
+            symbol = liquidation_data["symbol"]
+            side = "🟥 Short" if liquidation_data["side"] == "Sell" else "🟩 Long"
+            size = float(liquidation_data["size"])
+            price = float(liquidation_data["price"])
+            value = size * price  # Общая сумма ликвидации в USDT
 
-                if value > 100000:  # Фильтр по ликвидациям > $100K
-                    msg = f"⚡ Крупная ликвидация {symbol}!\n💰 {side} ликвидировано на {value:.2f} USDT\n📉 Цена: {price:.2f}"
-                    bot.send_message(chat_id, msg)
-                    print(msg)  # Лог в консоль
+            if value > 100000:  # Фильтр по ликвидациям > $100K
+                msg = f"⚡ Крупная ликвидация {symbol}!\n💰 {side} ликвидировано на {value:.2f} USDT\n📉 Цена: {price:.2f}"
+                bot.send_message(chat_id, msg)
+                print(msg)  # Лог в консоль
         else:
             print(f"Не удалось распарсить данные: {liquidation_data}")
     else:
