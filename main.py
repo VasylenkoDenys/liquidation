@@ -9,17 +9,20 @@ telegram_token = "7849765435:AAGKSvUGXFmjTkxGFIphqiGIubinOedJvJg"
 chat_id = "1466935078"
 bot = telebot.TeleBot(telegram_token)
 
-# 🔹 Мониторинг ликвидаций на Bybit
+# 🔹 WebSocket URL (Bybit Public Stream)
+BYBIT_WS_URL = "wss://stream.bybit.com/v5/public"
+
+# 🔹 Функция обработки сообщений WebSocket
 def on_message(ws, message):
     data = json.loads(message)
     
-    if "topic" in data and "execution" in data["topic"]:  # Проверяем, что это ликвидация
+    if "topic" in data and "liquidation" in data["topic"]:  # Проверяем, что это ликвидация
         liquidation = data["data"][0]
         symbol = liquidation["symbol"]
         side = "🟥 Short" if liquidation["side"] == "Sell" else "🟩 Long"
         qty = float(liquidation["execQty"])
         price = float(liquidation["execPrice"])
-        value = float(qty * price)
+        value = qty * price
 
         if value > 100000:  # Фильтр: Ликвидации > 100K$
             msg = f"⚡ Крупная ликвидация {symbol}!\n💰 {side} ликвидировано на {value:.2f} USDT\n📉 Цена: {price:.2f}"
@@ -36,13 +39,13 @@ def on_open(ws):
     print("🔗 WebSocket подключён! Ожидаем ликвидации...")
     subscribe_msg = {
         "op": "subscribe",
-        "args": ["publicTrade.BTCUSDT", "publicTrade.ETHUSDT", "publicTrade.SOLUSDT"]
+        "args": ["liquidation.BTCUSDT", "liquidation.ETHUSDT", "liquidation.SOLUSDT"]
     }
     ws.send(json.dumps(subscribe_msg))
 
 # Подключаемся к WebSocket Bybit
 ws = websocket.WebSocketApp(
-    "wss://stream.bybit.com/v5/public",  # URL WebSocket Bybit
+    BYBIT_WS_URL,  
     on_message=on_message,
     on_error=on_error,
     on_close=on_close
