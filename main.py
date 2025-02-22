@@ -1,6 +1,7 @@
 import json
 import websocket
 import telebot
+import time
 
 # 🔹 API-ключи
 telegram_token = "7849765435:AAGKSvUGXFmjTkxGFIphqiGIubinOedJvJg"
@@ -60,12 +61,19 @@ def on_open(ws):
     }
     ws.send(json.dumps(subscribe_msg))
 
-# Подключаемся к WebSocket Bybit
-ws = websocket.WebSocketApp(
-    BYBIT_WS_URL,  
-    on_message=on_message,
-    on_error=on_error,
-    on_close=on_close
-)
-ws.on_open = on_open
-ws.run_forever()
+def run_ws():
+    """ Функция для подключения и переподключения WebSocket """
+    while True:
+        ws = websocket.WebSocketApp(
+            BYBIT_WS_URL,  
+            on_message=on_message,
+            on_error=on_error,
+            on_close=on_close
+        )
+        ws.on_open = on_open
+        ws.run_forever()
+        print("Соединение потеряно, пытаемся переподключиться...")
+        time.sleep(5)  # Задержка перед переподключением
+
+# Запуск WebSocket с автоматическим переподключением
+run_ws()
