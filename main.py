@@ -10,7 +10,7 @@ chat_id = "1466935078"
 bot = telebot.TeleBot(telegram_token)
 
 # 🔹 WebSocket URL (Bybit Public Stream)
-BYBIT_WS_URL = "wss://stream.bybit.com/v5/public"
+BYBIT_WS_URL = "wss://stream.bybit.com/v5/public/linear"
 
 # 🔹 Функция обработки сообщений WebSocket
 def on_message(ws, message):
