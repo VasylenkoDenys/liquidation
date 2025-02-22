@@ -14,11 +14,16 @@ BYBIT_WS_URL = "wss://stream.bybit.com/v5/public/linear"
 def on_message(ws, message):
     data = json.loads(message)
 
-    # Проверяем, что данные правильной структуры
+    # Проверяем, что получено подтверждение подписки
+    if "topic" in data and "subscribe" in data["op"]:
+        print("Подписка на ликвидации успешна!")  # Уведомление, что подписка прошла успешно
+        return  # Это просто подтверждение подписки, пропускаем его
+
+    # Проверяем, что данные правильной структуры для ликвидаций
     if "topic" in data and "liquidation" in data["topic"]:
         print(f"Получены данные: {data}")  # Для отладки
 
-        # Теперь "data['data']" - это словарь, а не список
+        # Обрабатываем данные ликвидации
         liquidation_data = data.get("data", {})
 
         if isinstance(liquidation_data, dict):  # Проверка, что это словарь
