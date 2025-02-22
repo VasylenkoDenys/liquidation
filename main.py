@@ -12,10 +12,14 @@ BYBIT_WS_URL = "wss://stream.bybit.com/v5/public/linear"
 
 # 🔹 Функция обработки сообщений WebSocket
 def on_message(ws, message):
-    data = json.loads(message)
+    try:
+        data = json.loads(message)
+    except json.JSONDecodeError:
+        print(f"Ошибка декодирования JSON: {message}")
+        return
 
     # Проверяем, что получено подтверждение подписки
-    if "topic" in data and "subscribe" in data["op"]:
+    if "topic" in data and "subscribe" in data.get("op", ""):
         print("Подписка на ликвидации успешна!")  # Уведомление, что подписка прошла успешно
         return  # Это просто подтверждение подписки, пропускаем его
 
@@ -27,10 +31,10 @@ def on_message(ws, message):
         liquidation_data = data.get("data", {})
 
         if isinstance(liquidation_data, dict):  # Проверка, что это словарь
-            symbol = liquidation_data["symbol"]
-            side = "🟥 Short" if liquidation_data["side"] == "Sell" else "🟩 Long"
-            size = float(liquidation_data["size"])
-            price = float(liquidation_data["price"])
+            symbol = liquidation_data.get("symbol", "Неизвестно")
+            side = "🟥 Short" if liquidation_data.get("side") == "Sell" else "🟩 Long"
+            size = float(liquidation_data.get("size", 0))
+            price = float(liquidation_data.get("price", 0))
             value = size * price  # Общая сумма ликвидации в USDT
 
             if value > 100000:  # Фильтр по ликвидациям > $100K
