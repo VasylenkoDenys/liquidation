@@ -1,0 +1,6 @@
+pybit
+websocket-client
+pandas
+numpy
+ta
+requests
